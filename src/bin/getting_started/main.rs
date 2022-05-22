@@ -8,7 +8,8 @@ mod mesh;
 fn main() {
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
-    use mesh::teapot;
+    use mesh::*;
+    use rust_opengl::view_matrix;
 
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new();
@@ -16,14 +17,7 @@ fn main() {
 
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
-    let indices = glium::IndexBuffer::new(
-        &display,
-        glium::index::PrimitiveType::TrianglesList,
-        &teapot::INDICES,
-    )
-    .unwrap();
+    let shape = glium::vertex::VertexBuffer::new(&display, &wall::WALL).unwrap();
 
     let vertex_shader_src =
         fs::read_to_string("src/bin/getting_started/shader/vertex.glsl").unwrap();
@@ -39,10 +33,10 @@ fn main() {
     )
     .unwrap();
 
-    let matrix = [
-        [0.01, 0.0, 0.0, 0.0],
-        [0.0, 0.01, 0.0, 0.0],
-        [0.0, 0.0, 0.01, 0.0],
+    let model = [
+        [0.1, 0.0, 0.0, 0.0],
+        [0.0, 0.1, 0.0, 0.0],
+        [0.0, 0.0, 0.1, 0.0],
         [0.0, 0.0, 2.0, 1.0f32],
     ];
 
@@ -100,15 +94,18 @@ fn main() {
             ]
         };
 
+        let view = view_matrix(&[2.0, -1.0, 1.0], &[-2.0, 1.0, 1.0], &[0.0, 1.0, 0.0]);
+
         target
             .draw(
-                (&positions, &normals),
-                &indices,
+                &shape,
+                glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip),
                 &program,
-                &uniform! { matrix: matrix, perspective: perspective, u_light: light },
+                &uniform! { model: model, view: view, perspective: perspective, u_light: light },
                 &params,
             )
             .unwrap();
+
         target.finish().unwrap();
     });
 }
